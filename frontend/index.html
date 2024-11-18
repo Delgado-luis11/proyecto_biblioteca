@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #444;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            padding: 20px;
+        }
+        .form-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .form-group input {
+            padding: 8px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn-danger {
+            background-color: #f44336;
+            color: white;
+        }
+        .book {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        #message {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            border-radius: 4px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            top: 30px;
+            transform: translateX(-50%);
+            font-size: 17px;
+        }
+        #rented-info {
+            background-color: #2196F3;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Biblioteca Virtual</h1>
+    <div class="container">
+        <div class="form-group">
+            <input type="text" id="title" placeholder="Título" required>
+            <input type="text" id="author" placeholder="Autor" required>
+            <input type="number" id="year" placeholder="Año" required>
+            <button class="btn-primary" onclick="addBook()">Agregar Libro</button>
+        </div>
+
+        <div class="form-group">
+            <input type="text" id="searchTitle" placeholder="Buscar por título">
+            <button class="btn-primary" onclick="searchBook()">Buscar Libro</button>
+        </div>
+
+        <div id="books-list"></div>
+        <div id="rented-info"></div>
+    </div>
+
+    <div id="message"></div>
+
+    <script>
+        function showMessage(text, color = '#4CAF50') {
+            const messageBox = document.getElementById('message');
+            messageBox.style.backgroundColor = color;
+            messageBox.innerText = text;
+            messageBox.style.visibility = 'visible';
+            setTimeout(() => {
+                messageBox.style.visibility = 'hidden';
+            }, 3000);
+        }
+
+        async function addBook() {
+            const title = document.getElementById('title').value;
+            const author = document.getElementById('author').value;
+            const year = document.getElementById('year').value;
+
+            if (!title || !author || !year) {
+                showMessage('Por favor, complete todos los campos', '#f44336');
+                return;
+            }
+
+            const response = await fetch('http://localhost:5000/books', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, author, year })
+            });
+
+            if (response.ok) {
+                showMessage('Libro agregado con éxito');
+                document.getElementById('title').value = '';
+                document.getElementById('author').value = '';
+                document.getElementById('year').value = '';
+                getAvailableBooks();
+            } else {
+                showMessage('Error al agregar el libro', '#f44336');
+            }
+        }
+
+        async function searchBook() {
+            const query = document.getElementById('searchTitle').value;
+            const response = await fetch(`http://localhost:5000/books/search?query=${query}`);
+            const result = await response.json();
+
+            if (response.ok) {
+                showAvailableBooks(result);
+            } else {
+                showMessage(result.message, '#f44336');
+            }
+        }
+
+        async function getAvailableBooks() {
+            const response = await fetch('http://localhost:5000/books/available');
+            const result = await response.json();
+            showAvailableBooks(result);
+        }
+
+        function showAvailableBooks(books) {
+            const booksList = document.getElementById('books-list');
+            booksList.innerHTML = books.map(book => `
+                <div class="book">
+                    <div>
+                        <strong>${book[1]}</strong> - ${book[2]} (${book[3]})
+                    </div>
+                    ${book[4] ? `<button class="btn-primary" onclick="rentBook('${book[1]}')">Alquilar</button>` : ''}
+                    <button class="btn-danger" onclick="deleteBook(${book[0]})">Eliminar</button>
+                </div>
+            `).join('');
+        }
+
+        async function deleteBook(id) {
+            const response = await fetch(`http://localhost:5000/books/${id}`, {
+                method: 'DELETE'
+            });
+            const result = await response.json();
+
+            if (response.ok) {
+                showMessage(result.message, '#4CAF50');
+                getAvailableBooks();
+            } else {
+                showMessage(result.message, '#f44336');
+            }
+        }
+
+        async function rentBook(title) {
+            const days = prompt("¿Cuántos días desea alquilar el libro?");
+            if (!days || isNaN(days) || days <= 0) {
+                showMessage('Por favor, ingrese un número válido de días', '#f44336');
+                return;
+            }
+
+            const response = await fetch('http://localhost:5000/rent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, days: parseInt(days) })
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                showMessage(`Su libro fue alquilado con éxito: "${result.title}" por ${days} días con un costo de $${result.cost}`);
+                updateRentedInfo(result.title, days, result.cost);
+            } else {
+                showMessage(result.message, '#f44336');
+            }
+        }
+
+        async function updateRentedInfo(title, days, cost) {
+            document.getElementById('rented-info').innerHTML = `
+                <strong>Último libro alquilado:</strong><br>
+                Título: ${title}<br>
+                Días: ${days}<br>
+                Costo total: $${cost}
+            `;
+        }
+
+        async function getLastRentedBook() {
+            const response = await fetch('http://localhost:5000/last_rented');
+            const result = await response.json();
+            if (response.ok) {
+                updateRentedInfo(result.title, result.days, result.cost);
+            } else {
+                document.getElementById('rented-info').innerHTML = '<strong>No hay libros alquilados recientemente</strong>';
+            }
+        }
+
+        window.onload = getAvailableBooks;
+    </script>
+</body>
+</html>

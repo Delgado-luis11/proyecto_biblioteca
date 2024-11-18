@@ -1,0 +1,42 @@
+2024-10-23 20:22:22,153 CRIT Supervisor is running as root.  Privileges were not dropped because no user is specified in the config file.  If you intend to run as root, you can set user=root in the config file to avoid this message.
+2024-10-23 20:22:22,157 INFO supervisord started with pid 1
+2024-10-23 20:22:23,166 INFO spawned: 'api' with pid 7
+2024-10-23 20:22:23,168 INFO spawnerr: can't find command 'nginx'
+2024-10-23 20:22:23,619 WARN exited: api (exit status 1; not expected)
+2024-10-23 20:22:24,625 INFO spawned: 'api' with pid 8
+2024-10-23 20:22:24,627 INFO spawnerr: can't find command 'nginx'
+2024-10-23 20:22:26,000 INFO success: api entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2024-10-23 20:22:26,001 WARN exited: api (exit status 1; not expected)
+2024-10-23 20:22:27,008 INFO spawned: 'api' with pid 9
+2024-10-23 20:22:27,012 INFO spawnerr: can't find command 'nginx'
+2024-10-23 20:22:27,380 WARN exited: api (exit status 1; not expected)
+2024-10-23 20:22:28,393 INFO spawned: 'api' with pid 10
+2024-10-23 20:22:28,825 WARN exited: api (exit status 1; not expected)
+2024-10-23 20:22:30,830 INFO spawned: 'api' with pid 11
+2024-10-23 20:22:30,831 INFO spawnerr: can't find command 'nginx'
+2024-10-23 20:22:30,831 INFO gave up: web entered FATAL state, too many start retries too quickly
+2024-10-23 20:22:32,306 INFO success: api entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2024-10-23 20:22:32,306 WARN exited: api (exit status 1; not expected)
+2024-10-23 20:22:33,314 INFO spawned: 'api' with pid 12
+2024-10-23 20:22:34,641 INFO success: api entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2024-10-23 20:22:34,641 WARN exited: api (exit status 1; not expected)
+2024-10-23 20:22:35,646 INFO spawned: 'api' with pid 13
+2024-10-23 20:22:36,119 WARN exited: api (exit status 1; not expected)
+2024-10-23 20:22:37,131 INFO spawned: 'api' with pid 14
+2024-10-23 20:22:37,660 WARN exited: api (exit status 1; not expected)
+2024-10-23 20:22:39,666 INFO spawned: 'api' with pid 15
+2024-10-23 20:22:41,114 INFO success: api entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2024-10-23 20:22:41,115 WARN exited: api (exit status 1; not expected)
+2024-10-23 20:22:42,120 INFO spawned: 'api' with pid 16
+2024-10-23 20:22:43,528 INFO success: api entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2024-10-23 20:22:43,529 WARN exited: api (exit status 1; not expected)
+2024-10-23 20:22:44,532 INFO spawned: 'api' with pid 17
+2024-10-23 20:22:45,022 WARN exited: api (exit status 1; not expected)
+2024-10-23 20:22:46,029 INFO spawned: 'api' with pid 18
+2024-10-23 20:22:46,470 WARN exited: api (exit status 1; not expected)
+2024-10-23 20:22:48,478 INFO spawned: 'api' with pid 19
+2024-10-23 20:22:48,858 WARN exited: api (exit status 1; not expected)
+2024-10-23 20:22:51,866 INFO spawned: 'api' with pid 20
+2024-10-23 20:22:52,275 WARN exited: api (exit status 1; not expected)
+2024-10-23 20:22:52,276 INFO gave up: api entered FATAL state, too many start retries too quickly
+2024-10-23 20:42:14,101 WARN received SIGTERM indicating exit request

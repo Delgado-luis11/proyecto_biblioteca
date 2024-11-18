@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biblioteca</title>
+</head>
+<body>
+<h1>Biblioteca</h1>
+<div>
+<input type="text" id="title" placeholder="Título" required>
+<input type="text" id="author" placeholder="Autor" required>
+<input type="number" id="year" placeholder="Año" required>
+<button onclick="addBook()">Agregar Libro</button>
+</div>
+<div id="books-list"></div>
+ 
+    <script>
+        async function addBook() {
+            const title = document.getElementById('title').value;
+            const author = document.getElementById('author').value;
+            const year = document.getElementById('year').value;
+ 
+            await fetch('http://localhost:5000/books', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, author, year })
+            });
+ 
+            fetchBooks();
+        }
+ 
+        async function fetchBooks() {
+            const response = await fetch('http://localhost:5000/books');
+            const books = await response.json();
+            const booksList = document.getElementById('books-list');
+            booksList.innerHTML = books.map(book => `
+<div>
+<h2>${book[1]}</h2>
+<p>${book[2]} (${book[3]})</p>
+<button onclick="deleteBook(${book[0]})">Eliminar</button>
+</div>
+            `).join('');
+        }
+ 
+        async function deleteBook(id) {
+            await fetch(`http://localhost:5000/books/${id}`, { method: 'DELETE' });
+            fetchBooks();
+        }
+ 
+        fetchBooks();
+</script>
+</body>
+</html>
