@@ -1,5 +1,4 @@
 version: "3.4"
- 
 services:
   web:
     build: ./frontend
@@ -7,7 +6,7 @@ services:
       - "8080:80"
     networks:
       internetX:
-        ipv4_address: 172.40.0.20  # Cambiado a .0.x
+        ipv4_address: 172.40.0.20
  
   api:
     build: ./api
@@ -21,7 +20,7 @@ services:
       - db
     networks:
       internetX:
-        ipv4_address: 172.40.0.21  # Cambiado a .0.x
+        ipv4_address: 172.40.0.21
  
   db:
     image: 'bitnami/postgresql:14.9.0'
@@ -33,10 +32,34 @@ services:
       - POSTGRES_PASSWORD=password
     networks:
       internetX:
-        ipv4_address: 172.40.0.22  # Cambiado a .0.x
+        ipv4_address: 172.40.0.22
     volumes:
       - db_data:/bitnami/postgresql
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+ 
+  login_service:
+    build: ./login_service
+    ports:
+      - "5001:5001"
+    environment:
+      - POSTGRES_DB=biblioteca  # Cambia a la base de datos del servicio `api`
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    depends_on:
+      - db
+    networks:
+      internetX:
+        ipv4_address: 172.40.0.23
+ 
+  login_frontend:
+    build: ./login_frontend
+    ports:
+      - "8081:80"
+    depends_on:
+      - login_service
+    networks:
+      internetX:
+        ipv4_address: 172.40.0.24
  
 networks:
   internetX:

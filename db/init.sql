@@ -6,7 +6,13 @@ CREATE TABLE IF NOT EXISTS books (
     is_available BOOLEAN DEFAULT TRUE
 );
 
-
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL
+);
+-- Insertar un usuario de prueba (opcional)
+-- INSERT INTO users (username, password) VALUES ('test_user', 'test_password');
 -- Crear la tabla de libros alquilados si no existe
 CREATE TABLE IF NOT EXISTS rented_books (
     id SERIAL PRIMARY KEY,

@@ -120,9 +120,11 @@ def rent_book():
     data = request.get_json()
     title = data.get('title')
     days = data.get('days')
-    if not title or not days:
-        return jsonify({'message': 'Faltan datos requeridos (title, days)'}), 400
- 
+    renter_name = data.get('renter_name')  # Obtener el nombre del cliente
+
+    if not title or not days or not renter_name:
+        return jsonify({'message': 'Faltan datos requeridos (title, days, renter_name)'}), 400
+
     conn = connect_db()
     cur = conn.cursor()
     try:
@@ -130,21 +132,20 @@ def rent_book():
         book = cur.fetchone()
         if not book:
             return jsonify({'message': 'El libro no está disponible'}), 404
- 
+
         cur.execute("UPDATE books SET is_available = FALSE WHERE id = %s", (book[0],))
         cost = round(days * 0.25, 2)
         cur.execute(
-            "INSERT INTO rented_books (title, author, year, days, cost) VALUES (%s, %s, %s, %s, %s)",
-            (book[1], book[2], book[3], days, cost)
+            "INSERT INTO rented_books (title, author, year, days, cost, renter_name) VALUES (%s, %s, %s, %s, %s, %s)",
+            (book[1], book[2], book[3], days, cost, renter_name)
         )
         conn.commit()
-        return jsonify({'message': 'Libro alquilado con éxito', 'title': book[1], 'days': days, 'cost': cost}), 200
+        return jsonify({'message': 'Libro alquilado con éxito', 'title': book[1], 'days': days, 'cost': cost, 'renter_name': renter_name}), 200
     except Exception as e:
         conn.rollback()
         return jsonify({'message': f'Error al alquilar libro: {e}'}), 500
     finally:
         cur.close()
-        conn.close()
- 
+        conn.close() 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

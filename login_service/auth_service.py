@@ -1,35 +1,20 @@
-from flask import Flask, request, jsonify, redirect, send_from_directory
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 import psycopg2
-import jwt
-import datetime
 import os
-from dotenv import load_dotenv
- 
-load_dotenv()
  
 app = Flask(__name__)
-# Clave secreta: es mejor almacenarla en una variable de entorno para seguridad.
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'tu_secreto')  # Cambia a una clave segura
+CORS(app)
  
-# Configuración de conexión a la base de datos
-def get_db_connection():
-    try:
-        connection = psycopg2.connect(
-            dbname="login_db",
-            user="login_user",
-            password="login_password",
-            host="login_db",  # Nombre del servicio en Docker
-            port="5432"
-        )
-        return connection
-    except Exception as e:
-        print(f"Error al conectar con la base de datos: {e}")
-        return None
- 
-@app.route('/')
-def serve_index():
-    return send_from_directory('.', 'index.html')
+# Configuración para conectarse a la base de datos PostgreSQL
+def connect_db():
+    return psycopg2.connect(
+        dbname=os.getenv('POSTGRES_DB', 'biblioteca'),
+        user=os.getenv('POSTGRES_USER', 'user'),
+        password=os.getenv('POSTGRES_PASSWORD', 'password'),
+        host=os.getenv('POSTGRES_HOST', 'db'),  # Nombre del servicio de la base de datos en Docker Compose
+        port=os.getenv('POSTGRES_PORT', '5432')
+    )
  
 # Ruta para registrar un nuevo usuario
 @app.route('/register', methods=['POST'])
@@ -37,24 +22,28 @@ def register():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
+ 
     if not username or not password:
-        return jsonify({"message": "Faltan datos (username y password)"}), 400
-    # Hashear la contraseña
-    hashed_password = generate_password_hash(password, method='sha256')
-    # Conectar a la base de datos
-    conn = get_db_connection()
-    if conn is None:
-        return jsonify({"message": "Error en la conexión a la base de datos"}), 500
+        return jsonify({'message': 'El username y password son requeridos.'}), 400
+ 
+    conn = connect_db()
+    cur = conn.cursor()
+ 
     try:
-        cur = conn.cursor()
-        cur.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed_password))
+        # Verificar si el usuario ya existe
+        cur.execute("SELECT * FROM users WHERE username = %s", (username,))
+        if cur.fetchone():
+            return jsonify({'message': 'El usuario ya existe.'}), 409
+ 
+        # Registrar nuevo usuario
+        cur.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, password))
         conn.commit()
-        cur.close()
-        return jsonify({"message": "Usuario registrado con éxito"}), 201
-    except Exception as e:
-        print(f"Error al registrar usuario: {e}")
-        return jsonify({"message": "Error al registrar el usuario"}), 500
+        return jsonify({'message': 'Usuario registrado exitosamente.'}), 201
+    except psycopg2.Error as e:
+        conn.rollback()
+        return jsonify({'message': f'Error al registrar usuario: {str(e)}'}), 500
     finally:
+        cur.close()
         conn.close()
  
 # Ruta para iniciar sesión
@@ -63,30 +52,44 @@ def login():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
-    if not username or not password:
-        return jsonify({"message": "Faltan datos (username y password)"}), 400
-    # Conectar a la base de datos
-    conn = get_db_connection()
-    if conn is None:
-        return jsonify({"message": "Error en la conexión a la base de datos"}), 500
-    try:
-        cur = conn.cursor()
-        cur.execute("SELECT password FROM users WHERE username = %s", (username,))
-        user = cur.fetchone()
-        cur.close()
-    except Exception as e:
-        print(f"Error al consultar usuario: {e}")
-        return jsonify({"message": "Error al validar credenciales"}), 500
-    finally:
-        conn.close()
-    # Verificar si el usuario existe y si la contraseña es correcta
-    if user and check_password_hash(user[0], password):
-        token = jwt.encode({
-            'user': username,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
-        }, app.config['SECRET_KEY'], algorithm="HS256")
-        return jsonify({"message": "Login exitoso", "token": token, "redirect_url": "http://api:5000"}), 200
-    return jsonify({"message": "Credenciales inválidas"}), 401
  
+    if not username or not password:
+        return jsonify({'message': 'El username y password son requeridos.'}), 400
+ 
+    conn = connect_db()
+    cur = conn.cursor()
+ 
+    try:
+        # Verificar credenciales
+        cur.execute("SELECT * FROM users WHERE username = %s AND password = %s", (username, password))
+        user = cur.fetchone()
+        if user:
+            return jsonify({'message': 'Inicio de sesión exitoso.'}), 200
+        else:
+            return jsonify({'message': 'Credenciales inválidas.'}), 401
+    except psycopg2.Error as e:
+        return jsonify({'message': f'Error al iniciar sesión: {str(e)}'}), 500
+    finally:
+        cur.close()
+        conn.close()
+ 
+# Ruta para obtener la lista de usuarios (opcional, solo para pruebas)
+@app.route('/users', methods=['GET'])
+def get_users():
+    conn = connect_db()
+    cur = conn.cursor()
+ 
+    try:
+        cur.execute("SELECT id, username FROM users")
+        users = cur.fetchall()
+        user_list = [{'id': u[0], 'username': u[1]} for u in users]
+        return jsonify(user_list), 200
+    except psycopg2.Error as e:
+        return jsonify({'message': f'Error al obtener usuarios: {str(e)}'}), 500
+    finally:
+        cur.close()
+        conn.close()
+ 
+# Iniciar el servicio Flask
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=6000)
+    app.run(host='0.0.0.0', port=5001)

@@ -1,5 +1,6 @@
-Flask==2.2.2
-psycopg2==2.9.6
-werkzeug==2.2.2
-pyjwt==2.6.0
-python-dotenv==1.0.0
+Flask
+Flask-Cors
+psycopg2-binary
+werkzeug
+
+
